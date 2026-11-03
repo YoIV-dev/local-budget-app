@@ -1,0 +1,14 @@
+{
+  "id": "sample-02-halfwidth",
+  "store": "マルエツ 新宿店",
+  "date": "2026-10-01",
+  "total": 1199,
+  "conditions": { "lighting": "dim", "angle": "tilted", "wrinkled": true, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "ｷｬﾍﾞﾂ", "price": 198, "isFood": true, "category": "VEGETABLE" },
+    { "name": "ﾓﾔｼ", "price": 38, "isFood": true, "category": "VEGETABLE" },
+    { "name": "国産豚ﾛｰｽ ｽﾗｲｽ", "price": 498, "isFood": true, "category": "MEAT" },
+    { "name": "ﾁﾘ産銀鮭 切身", "price": 398, "isFood": true, "category": "FISH" },
+    { "name": "ｶﾙﾋﾞｰ ﾎﾟﾃﾄﾁｯﾌﾟｽ", "price": 148, "isFood": false }
+  ]
+}

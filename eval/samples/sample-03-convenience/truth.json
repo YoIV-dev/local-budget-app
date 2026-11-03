@@ -1,0 +1,12 @@
+{
+  "id": "sample-03-convenience",
+  "store": "セブン-イレブン 渋谷店",
+  "date": "2026-09-25",
+  "total": 680,
+  "conditions": { "lighting": "normal", "angle": "flat", "wrinkled": false, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "おにぎり 鮭", "price": 150, "isFood": true, "category": "OTHER" },
+    { "name": "緑茶 500ml", "price": 160, "isFood": false },
+    { "name": "サンドイッチ", "price": 320, "isFood": true, "category": "OTHER" }
+  ]
+}

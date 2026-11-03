@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">local-budget</string>
+    <string name="nav_home">ホーム</string>
+    <string name="nav_expenses">支出一覧</string>
+    <string name="nav_analytics">集計・分析</string>
+    <string name="nav_categories">カテゴリ管理</string>
+</resources>

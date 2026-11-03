@@ -1,0 +1,14 @@
+{
+  "id": "sample-01-supermarket",
+  "store": "イオン 幕張新都心店",
+  "date": "2026-09-20",
+  "total": 2010,
+  "conditions": { "lighting": "normal", "angle": "flat", "wrinkled": false, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "国産牛こま切れ", "price": 980, "isFood": true, "category": "MEAT" },
+    { "name": "キャベツ 1玉", "price": 198, "isFood": true, "category": "VEGETABLE" },
+    { "name": "牛乳 1L", "price": 228, "isFood": true, "category": "DAIRY" },
+    { "name": "プレーンヨーグルト", "price": 158, "isFood": true, "category": "DAIRY" },
+    { "name": "ゴミ袋 45L", "price": 298, "isFood": false }
+  ]
+}

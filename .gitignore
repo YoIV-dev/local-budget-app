@@ -1,0 +1,47 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+build/
+.gradle/
+
+# Android Studio Navigation editor temp files
+.navigation/
+
+# IDE files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+*.ipr
+*.iws
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Crashlytics / secrets
+google-services.json
+
+# Scan-evaluation receipts: real photos and purchases are personal data (eval/README.md)
+eval/data/
+
+# Tooling / Dependencies
+.claude/
+node_modules/

@@ -1,0 +1,156 @@
+{
+  "imageWidth": 800,
+  "imageHeight": 700,
+  "lines": [
+    {
+      "text": "ﾏﾙｴﾂ 新宿店",
+      "block": 0,
+      "left": 246,
+      "top": 89,
+      "right": 507,
+      "bottom": 128,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "2026年10月01日(水) 19:05",
+      "block": 0,
+      "left": 144,
+      "top": 135,
+      "right": 565,
+      "bottom": 180,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "ﾚｼﾞ02 責No.123",
+      "block": 0,
+      "left": 143,
+      "top": 185,
+      "right": 443,
+      "bottom": 226,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "ｷｬﾍﾞﾂ",
+      "block": 1,
+      "left": 30,
+      "top": 251,
+      "right": 151,
+      "bottom": 285,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "ﾓﾔｼ",
+      "block": 1,
+      "left": 28,
+      "top": 301,
+      "right": 101,
+      "bottom": 334,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "国産豚ﾛｰｽ ｽﾗｲｽ",
+      "block": 1,
+      "left": 27,
+      "top": 351,
+      "right": 292,
+      "bottom": 390,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "ﾁﾘ産銀鮭 切身",
+      "block": 1,
+      "left": 25,
+      "top": 401,
+      "right": 218,
+      "bottom": 438,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "ｶﾙﾋﾞｰ ﾎﾟﾃﾄﾁｯﾌﾟｽ",
+      "block": 1,
+      "left": 23,
+      "top": 451,
+      "right": 384,
+      "bottom": 494,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥198",
+      "block": 2,
+      "left": 610,
+      "top": 271,
+      "right": 691,
+      "bottom": 304,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥38",
+      "block": 2,
+      "left": 628,
+      "top": 322,
+      "right": 689,
+      "bottom": 354,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥498",
+      "block": 2,
+      "left": 606,
+      "top": 371,
+      "right": 687,
+      "bottom": 404,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥398",
+      "block": 2,
+      "left": 605,
+      "top": 421,
+      "right": 686,
+      "bottom": 454,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥148",
+      "block": 2,
+      "left": 603,
+      "top": 471,
+      "right": 684,
+      "bottom": 504,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "合計",
+      "block": 3,
+      "left": 21,
+      "top": 521,
+      "right": 82,
+      "bottom": 553,
+      "angle": 2.0,
+      "confidence": 0.9
+    },
+    {
+      "text": "¥1,199",
+      "block": 4,
+      "left": 570,
+      "top": 540,
+      "right": 681,
+      "bottom": 574,
+      "angle": 2.0,
+      "confidence": 0.9
+    }
+  ]
+}

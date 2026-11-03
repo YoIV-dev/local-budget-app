@@ -1,0 +1,13 @@
+{
+  "id": "sample-04-quantity-discount",
+  "store": "業務スーパー 中野店",
+  "date": "2026-10-03",
+  "total": 1292,
+  "conditions": { "lighting": "normal", "angle": "flat", "wrinkled": false, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "牛乳 1L", "price": 456, "quantity": 2, "isFood": true, "category": "DAIRY" },
+    { "name": "国産鶏もも肉", "price": 612, "isFood": true, "category": "MEAT" },
+    { "name": "にんじん 3本", "price": 196, "quantity": 2, "isFood": true, "category": "VEGETABLE" },
+    { "name": "ポカリスエット 500ml", "price": 128, "isFood": false }
+  ]
+}

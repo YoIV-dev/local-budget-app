@@ -1,0 +1,13 @@
+{
+  "id": "sample-05-ocr-misreads",
+  "store": "サミット 中野店",
+  "date": "2026-10-02",
+  "total": 1969,
+  "conditions": { "lighting": "dim", "angle": "tilted", "wrinkled": true, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "ﾄﾏﾄ", "price": 198, "isFood": true, "category": "VEGETABLE" },
+    { "name": "豚ﾊﾞﾗ ｽﾗｲｽ", "price": 1280, "isFood": true, "category": "MEAT" },
+    { "name": "ﾊﾞﾅﾅ", "price": 178, "isFood": true, "category": "VEGETABLE" },
+    { "name": "緑茶 2L", "price": 168, "isFood": false }
+  ]
+}
