@@ -1,0 +1,9 @@
+{
+  "name": "local-budget-preview",
+  "version": "1.0.0",
+  "description": "Interactive Web Preview Simulator for local-budget Android App",
+  "scripts": {
+    "dev": "node preview/server.js",
+    "start": "node preview/server.js"
+  }
+}

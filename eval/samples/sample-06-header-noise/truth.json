@@ -1,0 +1,11 @@
+{
+  "id": "sample-06-header-noise",
+  "store": "イオン 新宿西口店",
+  "date": "2026-10-05",
+  "total": 526,
+  "conditions": { "lighting": "normal", "angle": "flat", "wrinkled": false, "long": false, "device": "synthetic" },
+  "items": [
+    { "name": "ｻﾝﾄﾞｲｯﾁ", "price": 298, "isFood": true, "category": "OTHER" },
+    { "name": "牛乳", "price": 228, "isFood": true, "category": "DAIRY" }
+  ]
+}

@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>local-budget | インタラクティブUIプレビュー</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans JP', sans-serif;
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .phone-frame {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 12px #1e293b, 0 0 0 14px #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col items-center justify-center p-4 md:p-8">
+
+  <div class="mb-4 text-center">
+    <div class="inline-flex items-center gap-2 bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 px-3 py-1 rounded-full text-xs font-semibold mb-2">
+      <i class="fa-solid fa-lock text-xs"></i> 家計の記録とレシートの読み取りは端末内で
+    </div>
+    <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight">local-budget UI プレビュー</h1>
+    <p class="text-slate-400 text-xs md:text-sm mt-1">支出管理 ＆ 冷蔵庫在庫管理機能（食材自動抽出・5カテゴリ・OS共有シート）の実動シミュレーター</p>
+  </div>
+
+  <!-- Mobile Device Mockup -->
+  <div class="relative w-full max-w-[400px] h-[820px] bg-slate-50 rounded-[44px] phone-frame overflow-hidden flex flex-col">
+
+    <!-- Status Bar -->
+    <div class="h-10 bg-slate-100 flex items-center justify-between px-6 select-none shrink-0 pt-1">
+      <span class="text-xs font-bold text-slate-700" id="clock-display">12:30</span>
+      <div class="w-20 h-4 bg-slate-900 rounded-full mx-auto -mt-2"></div>
+      <div class="flex items-center gap-1.5 text-slate-600 text-xs">
+        <i class="fa-solid fa-signal text-[10px]"></i>
+        <i class="fa-solid fa-wifi text-[10px]"></i>
+        <i class="fa-solid fa-battery-full text-xs"></i>
+      </div>
+    </div>
+
+    <!-- Top App Bar -->
+    <div class="h-14 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+      <div class="flex items-center gap-2">
+        <h2 id="screen-title" class="text-lg font-bold text-slate-900">冷蔵庫</h2>
+        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <i class="fa-solid fa-shield-halved text-[9px]"></i> ローカル完結
+        </span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="triggerReceiptScanDemo()" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 hover:bg-indigo-100 transition">
+          <i class="fa-solid fa-camera"></i> スキャン実演
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen Content Container -->
+    <div id="screen-container" class="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50">
+      
+      <!-- SCREEN: FRIDGE (Default Active) -->
+      <div id="screen-fridge" class="screen-view p-4 space-y-3 pb-24">
+        <!-- View Mode Tabs -->
+        <div class="bg-slate-200/80 p-1 rounded-xl flex text-xs font-bold text-slate-600">
+          <button id="tab-date" onclick="setFridgeViewMode('BY_DATE')" class="flex-1 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition">
+            購入日順
+          </button>
+          <button id="tab-category" onclick="setFridgeViewMode('BY_CATEGORY')" class="flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">
+            カテゴリ別
+          </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+          <input type="text" id="fridge-search" oninput="renderFridgeItems()" placeholder="品名やカテゴリで検索..." 
+                 class="w-full bg-white border border-slate-200 text-xs rounded-xl pl-9 pr-8 py-2 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+          <button onclick="clearSearch()" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-xs hidden" id="clear-search-btn">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Controls Row: Summary, Filter, Share -->
+        <div class="flex items-center justify-between text-xs pt-1">
+          <div class="flex items-center gap-2">
+            <span id="fridge-count-badge" class="bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded-md text-[11px]">
+              在庫: 4品
+            </span>
+            <label class="flex items-center gap-1.5 text-slate-600 cursor-pointer select-none text-[11px]">
+              <input type="checkbox" id="show-consumed-toggle" onchange="renderFridgeItems()" class="rounded border-slate-300 text-emerald-600 focus:ring-0">
+              消費済み
+            </label>
+            <button onclick="clearConsumedItems()" id="clear-consumed-btn" class="hidden text-rose-500 hover:text-rose-700 text-xs ml-1" title="消費済みを一括削除">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+          <button onclick="openShareSheet()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm text-xs">
+            <i class="fa-solid fa-share-nodes text-[11px]"></i> 共有
+          </button>
+        </div>
+
+        <!-- Food List -->
+        <div id="fridge-item-list" class="space-y-2 pt-1">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- SCREEN: HOME -->
+      <div id="screen-home" class="screen-view hidden p-4 space-y-4 pb-24">
+        <!-- Monthly Budget Card -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex justify-between items-center text-xs text-slate-500">
+            <span>2026年9月の支出</span>
+            <span class="font-bold text-slate-700">予算: ¥70,000</span>
+          </div>
+          <div>
+            <div class="text-3xl font-black text-slate-900 tracking-tight">¥48,250</div>
+            <div class="text-xs text-emerald-600 font-semibold mt-0.5">残り ¥21,750 (予算消化率 68.9%)</div>
+          </div>
+          <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div class="bg-emerald-500 h-full rounded-full" style="width: 68.9%"></div>
+          </div>
+        </div>
+
+        <!-- Quick Receipt Scan Banner -->
+        <div onclick="triggerReceiptScanDemo()" class="cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-700 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between hover:opacity-95 transition">
+          <div class="space-y-0.5">
+            <div class="font-bold text-sm flex items-center gap-1.5">
+              <i class="fa-solid fa-receipt"></i> レシートをスキャン
+            </div>
+            <div class="text-[11px] text-emerald-100">完全端末内OCRで食材も自動検出 🥦</div>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </div>
+        </div>
+
+        <!-- Recent Expenses -->
+        <div class="space-y-2">
+          <div class="text-xs font-bold text-slate-600">最近の支出</div>
+          <div class="space-y-2 text-xs">
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">🍽</span>
+                <div>
+                  <div class="font-bold text-slate-900">イオン 幕張新都心店</div>
+                  <div class="text-[10px] text-slate-400">9月25日 • 食費 (レシートOCR)</div>
+                </div>
+              </div>
+              <div class="font-bold text-slate-900">¥2,010</div>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+              <div class="flex items-center gap-2.5">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">🚆</span>
+                <div>
+                  <div class="font-bold text-slate-900">JR東日本 Suica</div>
+                  <div class="text-[10px] text-slate-400">9月24日 • 交通費</div>
+                </div>
+              </div>
+              <div class="font-bold text-slate-900">¥580</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: EXPENSES -->
+      <div id="screen-expenses" class="screen-view hidden p-4 space-y-3 pb-24">
+        <div class="text-xs font-bold text-slate-600 flex justify-between items-center">
+          <span>9月の支出明細 (全24件)</span>
+          <span class="text-emerald-600 font-bold">合計 ¥48,250</span>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold">🍽</span>
+              <div>
+                <div class="font-bold text-slate-900">イオン 幕張新都心店</div>
+                <div class="text-[10px] text-slate-400">9月25日 • 食材4品を冷蔵庫に連携済</div>
+              </div>
+            </div>
+            <div class="font-bold text-slate-900">¥2,010</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-sm font-bold">🍽</span>
+              <div>
+                <div class="font-bold text-slate-900">セブン-イレブン</div>
+                <div class="text-[10px] text-slate-400">9月24日 • 食費</div>
+              </div>
+            </div>
+            <div class="font-bold text-slate-900">¥680</div>
+          </div>
+          <div class="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">🚆</span>
+              <div>
+                <div class="font-bold text-slate-900">モバイルSuica</div>
+                <div class="text-[10px] text-slate-400">9月23日 • 交通費</div>
+              </div>
+            </div>
+            <div class="font-bold text-slate-900">¥1,000</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: ANALYTICS -->
+      <div id="screen-analytics" class="screen-view hidden p-4 space-y-4 pb-24">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          <div class="text-xs font-bold text-slate-700">9月 カテゴリ別内訳</div>
+          <div class="flex items-center justify-center py-4">
+            <div class="w-32 h-32 rounded-full border-8 border-orange-500 border-t-emerald-500 border-r-blue-500 border-l-purple-500 flex items-center justify-center">
+              <div class="text-center">
+                <div class="text-[10px] text-slate-400 font-bold">総支出</div>
+                <div class="text-sm font-black text-slate-800">¥48,250</div>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> 食費: 58%</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> 日用品: 18%</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> 交通費: 14%</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> その他: 10%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: SETTINGS -->
+      <div id="screen-settings" class="screen-view hidden p-4 space-y-3 pb-24">
+        <div class="text-xs font-bold text-slate-500">データ＆管理</div>
+        <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 text-xs">
+          <div class="p-3.5 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="fa-solid fa-shapes"></i></span>
+              <span class="font-bold text-slate-800">カテゴリ管理</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+          </div>
+          <div class="p-3.5 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-arrows-rotate"></i></span>
+              <span class="font-bold text-slate-800">固定支出・サブスク管理</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+          </div>
+          <div class="p-3.5 flex justify-between items-center cursor-pointer hover:bg-slate-50">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center"><i class="fa-solid fa-file-export"></i></span>
+              <span class="font-bold text-slate-800">JSONバックアップ / 復元 (冷蔵庫データ対応)</span>
+            </div>
+            <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
+          </div>
+        </div>
+
+        <div class="bg-emerald-50 border border-emerald-200/80 rounded-2xl p-3.5 text-xs text-emerald-900 space-y-1">
+          <div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-shield-halved"></i> 家計の記録とレシートの読み取りは端末内で</div>
+          <p class="text-[11px] text-emerald-700 leading-relaxed">
+            支出履歴や在庫データは端末内に保存し、レシートの読み取りも端末内で行います。これらの記録を開発者のサーバーへ送信する機能はありません。
+          </p>
+          <p class="text-[11px] text-emerald-700 leading-relaxed">
+            共有・書き出し先は利用者が選べます。Androidの設定によっては、アプリのデータがクラウドにバックアップされる場合があります。
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Floating Action Button (Only on Fridge screen) -->
+    <button id="fridge-fab" onclick="openAddFridgeModal()" 
+            class="absolute right-5 bottom-20 w-12 h-12 bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center text-lg hover:bg-emerald-700 transition z-10 active:scale-95">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- Bottom Navigation Bar (5 tabs) -->
+    <div class="h-16 bg-white border-t border-slate-200 px-2 flex items-center justify-around shrink-0 z-10">
+      <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[10px] font-semibold">ホーム</span>
+      </button>
+      <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-receipt text-base"></i>
+        <span class="text-[10px] font-semibold">支出</span>
+      </button>
+      <button onclick="switchTab('fridge')" id="nav-fridge" class="nav-btn flex flex-col items-center gap-1 text-emerald-600">
+        <i class="fa-solid fa-kitchen-set text-base"></i>
+        <span class="text-[10px] font-bold">冷蔵庫</span>
+      </button>
+      <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-chart-pie text-base"></i>
+        <span class="text-[10px] font-semibold">分析</span>
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700">
+        <i class="fa-solid fa-gear text-base"></i>
+        <span class="text-[10px] font-semibold">設定</span>
+      </button>
+    </div>
+
+    <!-- MODAL: ADD / EDIT FRIDGE ITEM -->
+    <div id="add-item-modal" class="absolute inset-0 bg-black/50 z-30 hidden flex items-end">
+      <div class="bg-white rounded-t-3xl w-full p-5 space-y-4 max-h-[85%] overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <h3 id="modal-title" class="text-sm font-bold text-slate-900">食材を追加</h3>
+          <button onclick="closeModal('add-item-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">品名</label>
+            <input type="text" id="modal-name" oninput="autoDetectCategory(this.value)" placeholder="例: 豚バラ薄切り肉, キャベツ" 
+                   class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="block text-slate-600 font-bold mb-1">カテゴリ</label>
+            <div class="grid grid-cols-3 gap-2" id="category-radio-group">
+              <!-- populated dynamically -->
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="flex-1">
+              <label class="block text-slate-600 font-bold mb-1">数量</label>
+              <div class="flex items-center gap-2">
+                <button onclick="adjustModalQty(-1)" class="w-8 h-8 rounded-lg bg-slate-100 border text-slate-700 font-bold">-</button>
+                <span id="modal-qty-val" class="font-bold text-sm w-6 text-center">1</span>
+                <button onclick="adjustModalQty(1)" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">+</button>
+              </div>
+            </div>
+            <div class="w-24">
+              <label class="block text-slate-600 font-bold mb-1">単位</label>
+              <input type="text" id="modal-unit" value="個" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-slate-900">
+            </div>
+          </div>
+          <div class="pt-2">
+            <button onclick="saveFridgeItem()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs">
+              保存
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: SHARE SHEET (OS Share Sheet Simulation) -->
+    <div id="share-sheet-modal" class="absolute inset-0 bg-black/60 z-30 hidden flex items-end">
+      <div class="bg-white rounded-t-3xl w-full p-5 space-y-4 max-h-[85%] overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-share-nodes"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900">冷蔵庫の在庫を共有</h3>
+          </div>
+          <button onclick="closeModal('share-sheet-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="text-[11px] text-slate-500">
+          Android標準の共有シート（<code>Intent.ACTION_SEND</code>）により、外部通信なしでLINEやメッセージに共有するテキストです。
+        </p>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono whitespace-pre-wrap text-slate-700 max-h-56 overflow-y-auto" id="share-text-content">
+        </div>
+        <div class="flex gap-2">
+          <button onclick="copyShareText()" class="flex-1 bg-slate-900 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+            <i class="fa-regular fa-copy"></i> テキストをコピー
+          </button>
+          <button onclick="closeModal('share-sheet-modal')" class="px-4 py-2 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs">
+            閉じる
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: RECEIPT SCAN SIMULATION -->
+    <div id="scan-modal" class="absolute inset-0 bg-slate-900 z-30 hidden flex flex-col">
+      <!-- Camera Viewfinder -->
+      <div class="relative flex-1 bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <!-- Live Scan Guide -->
+        <div class="relative w-full max-w-[280px] h-[380px] border-2 border-emerald-400 rounded-2xl p-4 flex flex-col justify-between shadow-[0_0_20px_rgba(52,211,153,0.3)] bg-slate-900/60 backdrop-blur-sm">
+          <div class="text-[10px] text-emerald-400 font-bold tracking-wider uppercase text-left flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> レシート検出中 (静止検知)
+          </div>
+          <div class="bg-white text-slate-900 p-3 rounded-lg text-left text-[9px] font-mono shadow-md opacity-90 scale-95 border">
+            <div class="font-bold border-b pb-1 text-center">イオンモール 幕張新都心店</div>
+            <div class="text-[8px] text-slate-500 py-0.5">2026/09/25 18:42</div>
+            <div class="flex justify-between"><span>国産牛こま切れ</span><span>¥980</span></div>
+            <div class="flex justify-between"><span>キャベツ 1玉</span><span>¥198</span></div>
+            <div class="flex justify-between"><span>牛乳 1L</span><span>¥228</span></div>
+            <div class="flex justify-between"><span>プレーンヨーグルト</span><span>¥158</span></div>
+            <div class="flex justify-between text-slate-400"><span>ゴミ袋 45L (非食品)</span><span>¥298</span></div>
+            <div class="border-t font-bold flex justify-between mt-1 pt-1"><span>合計</span><span>¥2,010</span></div>
+          </div>
+          <div class="text-[10px] text-emerald-300 font-medium">ブレなし • 自動シャッター待機</div>
+        </div>
+
+        <button onclick="processReceiptScanDemo()" class="mt-6 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-2.5 rounded-full shadow-lg flex items-center gap-2 text-xs">
+          <i class="fa-solid fa-camera"></i> レシートを読み取る
+        </button>
+      </div>
+
+      <div class="bg-slate-900 p-4 border-t border-slate-800 flex justify-between items-center text-xs">
+        <span class="text-slate-400">Bundled ML Kit 日本語OCR</span>
+        <button onclick="closeModal('scan-modal')" class="text-slate-300 hover:text-white font-bold">キャンセル</button>
+      </div>
+    </div>
+
+    <!-- MODAL: OCR REVIEW & FRIDGE ITEM EXTRACT CONFIRMATION -->
+    <div id="ocr-review-modal" class="absolute inset-0 bg-black/60 z-30 hidden flex items-end">
+      <div class="bg-white rounded-t-3xl w-full p-5 space-y-3 max-h-[90%] overflow-y-auto">
+        <div class="flex justify-between items-center">
+          <h3 class="text-sm font-bold text-slate-900">支出の記録 & 食材自動抽出</h3>
+          <button onclick="closeModal('ocr-review-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1">
+          <div class="flex justify-between font-bold text-slate-800">
+            <span>イオンモール 幕張新都心店</span>
+            <span class="text-emerald-700 font-black">¥2,010</span>
+          </div>
+          <div class="text-[10px] text-slate-500">2026年9月25日 • カテゴリ: 食費</div>
+        </div>
+
+        <!-- Fridge Extracted Food Checklist -->
+        <div class="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-bold text-emerald-950 flex items-center gap-1">
+              🥦 冷蔵庫に追加する食材 (<span id="extracted-count">4</span>件)
+            </span>
+            <span class="text-[10px] text-emerald-700 font-semibold">レシートから自動判定</span>
+          </div>
+          <p class="text-[10px] text-emerald-800 leading-snug">
+            チェックを入れた品目をレシート名そのまま冷蔵庫の在庫に登録します（ゴミ袋などの非食品は自動除外されています）。
+          </p>
+
+          <div class="space-y-1.5 text-xs" id="extracted-checklist">
+            <!-- Dynamically populated checklist -->
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button onclick="saveOcrExpenseAndFridgeItems()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs">
+            支出と冷蔵庫に保存
+          </button>
+          <button onclick="closeModal('ocr-review-modal')" class="px-4 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-xl text-xs">
+            キャンセル
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State
+    const FOOD_CATEGORIES = [
+      { id: 'VEGETABLE', name: '野菜', emoji: '🥦', color: '#4CAF50', bg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+      { id: 'MEAT', name: '肉', emoji: '🥩', color: '#E53935', bg: 'bg-rose-50 text-rose-700 border-rose-200' },
+      { id: 'FISH', name: '魚', emoji: '🐟', color: '#1E88E5', bg: 'bg-blue-50 text-blue-700 border-blue-200' },
+      { id: 'DAIRY', name: '乳製品', emoji: '🥛', color: '#FB8C00', bg: 'bg-amber-50 text-amber-700 border-amber-200' },
+      { id: 'OTHER', name: 'その他', emoji: '🥫', color: '#8E24AA', bg: 'bg-purple-50 text-purple-700 border-purple-200' }
+    ];
+
+    let fridgeItems = [
+      { id: 1, name: '国産牛こま切れ', category: 'MEAT', quantity: 1, unit: 'パック', purchaseDate: '2026-09-24', isConsumed: false },
+      { id: 2, name: 'キャベツ 1玉', category: 'VEGETABLE', quantity: 1, unit: '個', purchaseDate: '2026-09-23', isConsumed: false },
+      { id: 3, name: '成分無調整牛乳 1L', category: 'DAIRY', quantity: 2, unit: '本', purchaseDate: '2026-09-22', isConsumed: false },
+      { id: 4, name: '塩鮭切り身', category: 'FISH', quantity: 2, unit: '切', purchaseDate: '2026-09-25', isConsumed: false }
+    ];
+
+    let fridgeViewMode = 'BY_DATE';
+    let editingItemId = null;
+    let modalSelectedCategory = 'OTHER';
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-display').innerText = 
+        String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Tab Navigation
+    function switchTab(screenName) {
+      document.querySelectorAll('.screen-view').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('text-emerald-600');
+        btn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`screen-${screenName}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${screenName}`);
+      activeNav.classList.remove('text-slate-400');
+      activeNav.classList.add('text-emerald-600');
+
+      const titleMap = {
+        home: 'ホーム',
+        expenses: '支出一覧',
+        fridge: '冷蔵庫',
+        analytics: '集計・分析',
+        settings: '設定・管理'
+      };
+      document.getElementById('screen-title').innerText = titleMap[screenName] || 'local-budget';
+
+      const fab = document.getElementById('fridge-fab');
+      if (screenName === 'fridge') {
+        fab.classList.remove('hidden');
+        renderFridgeItems();
+      } else {
+        fab.classList.add('hidden');
+      }
+    }
+
+    // Fridge View Mode Switch
+    function setFridgeViewMode(mode) {
+      fridgeViewMode = mode;
+      const tabDate = document.getElementById('tab-date');
+      const tabCat = document.getElementById('tab-category');
+      if (mode === 'BY_DATE') {
+        tabDate.className = "flex-1 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition";
+        tabCat.className = "flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition";
+      } else {
+        tabCat.className = "flex-1 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm transition";
+        tabDate.className = "flex-1 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition";
+      }
+      renderFridgeItems();
+    }
+
+    function clearSearch() {
+      document.getElementById('fridge-search').value = '';
+      document.getElementById('clear-search-btn').classList.add('hidden');
+      renderFridgeItems();
+    }
+
+    // Render Fridge Items
+    function renderFridgeItems() {
+      const searchInput = document.getElementById('fridge-search');
+      const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+      const showConsumed = document.getElementById('show-consumed-toggle').checked;
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (clearBtn) clearBtn.classList.toggle('hidden', query === '');
+
+      const activeCount = fridgeItems.filter(i => !i.isConsumed).length;
+      document.getElementById('fridge-count-badge').innerText = `在庫: ${activeCount}品`;
+
+      const hasConsumed = fridgeItems.some(i => i.isConsumed);
+      document.getElementById('clear-consumed-btn').classList.toggle('hidden', !(showConsumed && hasConsumed));
+
+      const filtered = fridgeItems.filter(item => {
+        const matchesConsumed = showConsumed || !item.isConsumed;
+        const catObj = FOOD_CATEGORIES.find(c => c.id === item.category);
+        const matchesQuery = query === '' || 
+          item.name.toLowerCase().includes(query) || 
+          (catObj && catObj.name.toLowerCase().includes(query));
+        return matchesConsumed && matchesQuery;
+      });
+
+      const container = document.getElementById('fridge-item-list');
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-12 px-4 space-y-2">
+            <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 mx-auto flex items-center justify-center text-xl">
+              <i class="fa-solid fa-kitchen-set"></i>
+            </div>
+            <div class="font-bold text-slate-700 text-xs">${query ? '該当する食材が見つかりません' : '冷蔵庫に食材がありません'}</div>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              ${query ? '別のキーワードで検索してください' : 'レシートをスキャンするか、右下の「＋」ボタンから追加してください'}
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      if (fridgeViewMode === 'BY_DATE') {
+        // Sorted by purchase date descending
+        const sorted = [...filtered].sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate));
+        sorted.forEach(item => {
+          container.appendChild(createItemCard(item));
+        });
+      } else {
+        // Grouped by 5 categories
+        FOOD_CATEGORIES.forEach(cat => {
+          const itemsInCat = filtered.filter(i => i.category === cat.id);
+          if (itemsInCat.length > 0) {
+            const header = document.createElement('div');
+            header.className = "flex items-center gap-2 pt-2 pb-1";
+            header.innerHTML = `
+              <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs">${cat.emoji}</span>
+              <span class="font-bold text-slate-800 text-xs">${cat.name}</span>
+              <span class="text-[10px] text-slate-400">(${itemsInCat.length}件)</span>
+            `;
+            container.appendChild(header);
+            itemsInCat.forEach(item => {
+              container.appendChild(createItemCard(item));
+            });
+          }
+        });
+      }
+    }
+
+    function createItemCard(item) {
+      const cat = FOOD_CATEGORIES.find(c => c.id === item.category) || FOOD_CATEGORIES[4];
+      const card = document.createElement('div');
+      card.className = `p-3 rounded-2xl border transition ${item.isConsumed ? 'bg-slate-100/70 border-slate-200 opacity-60' : 'bg-white border-slate-200/90 shadow-sm'}`;
+
+      // Date calc
+      const pDate = new Date(item.purchaseDate);
+      const today = new Date('2026-09-25');
+      const diffDays = Math.floor((today - pDate) / (1000 * 60 * 60 * 24));
+      let ageStr = `${pDate.getMonth()+1}/${pDate.getDate()}購入`;
+      if (diffDays === 0) ageStr += ' (今日)';
+      else if (diffDays === 1) ageStr += ' (昨日)';
+      else if (diffDays > 1) ageStr += ` (${diffDays}日前)`;
+
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
+            <input type="checkbox" ${item.isConsumed ? 'checked' : ''} onchange="toggleItemConsumed(${item.id})"
+                   class="w-4 h-4 rounded text-emerald-600 focus:ring-0 cursor-pointer">
+            <div class="flex-1 min-w-0 cursor-pointer" onclick="openEditFridgeModal(${item.id})">
+              <div class="font-bold text-xs text-slate-900 truncate ${item.isConsumed ? 'line-through text-slate-400' : ''}">
+                ${item.name}
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="inline-flex items-center gap-1 border text-[10px] font-bold px-1.5 py-0.2 rounded-md ${cat.bg}">
+                  <span>${cat.emoji}</span> ${cat.name}
+                </span>
+                <span class="text-[10px] ${diffDays >= 7 && !item.isConsumed ? 'text-rose-500 font-bold' : 'text-slate-400'}">
+                  ${ageStr}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <div class="flex items-center bg-slate-100 rounded-lg p-0.5">
+              <button onclick="updateItemQuantity(${item.id}, -1)" ${item.quantity <= 1 || item.isConsumed ? 'disabled' : ''}
+                      class="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-white disabled:opacity-30 text-xs">-</button>
+              <span class="px-2 font-bold text-xs text-slate-800 ${item.isConsumed ? 'line-through text-slate-400' : ''}">
+                ${item.quantity}${item.unit}
+              </span>
+              <button onclick="updateItemQuantity(${item.id}, 1)" ${item.isConsumed ? 'disabled' : ''}
+                      class="w-6 h-6 rounded flex items-center justify-center font-bold text-slate-600 hover:bg-white disabled:opacity-30 text-xs">+</button>
+            </div>
+            <button onclick="deleteFridgeItem(${item.id})" class="text-slate-300 hover:text-rose-500 p-1 text-xs">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      return card;
+    }
+
+    function toggleItemConsumed(id) {
+      const item = fridgeItems.find(i => i.id === id);
+      if (item) {
+        item.isConsumed = !item.isConsumed;
+        renderFridgeItems();
+      }
+    }
+
+    function updateItemQuantity(id, delta) {
+      const item = fridgeItems.find(i => i.id === id);
+      if (item) {
+        item.quantity = Math.max(1, item.quantity + delta);
+        renderFridgeItems();
+      }
+    }
+
+    function deleteFridgeItem(id) {
+      if (confirm('この食材を冷蔵庫から削除しますか？')) {
+        fridgeItems = fridgeItems.filter(i => i.id !== id);
+        renderFridgeItems();
+      }
+    }
+
+    function clearConsumedItems() {
+      if (confirm('消費済みの食材をすべて削除しますか？')) {
+        fridgeItems = fridgeItems.filter(i => !i.isConsumed);
+        renderFridgeItems();
+      }
+    }
+
+    // Modal Helpers
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function openAddFridgeModal() {
+      editingItemId = null;
+      document.getElementById('modal-title').innerText = '食材を追加';
+      document.getElementById('modal-name').value = '';
+      document.getElementById('modal-qty-val').innerText = '1';
+      document.getElementById('modal-unit').value = '個';
+      modalSelectedCategory = 'OTHER';
+      renderCategoryRadios();
+      document.getElementById('add-item-modal').classList.remove('hidden');
+    }
+
+    function openEditFridgeModal(id) {
+      const item = fridgeItems.find(i => i.id === id);
+      if (!item) return;
+      editingItemId = id;
+      document.getElementById('modal-title').innerText = '食材を編集';
+      document.getElementById('modal-name').value = item.name;
+      document.getElementById('modal-qty-val').innerText = String(item.quantity);
+      document.getElementById('modal-unit').value = item.unit;
+      modalSelectedCategory = item.category;
+      renderCategoryRadios();
+      document.getElementById('add-item-modal').classList.remove('hidden');
+    }
+
+    function adjustModalQty(delta) {
+      const el = document.getElementById('modal-qty-val');
+      let val = parseInt(el.innerText) + delta;
+      if (val < 1) val = 1;
+      el.innerText = String(val);
+    }
+
+    function renderCategoryRadios() {
+      const container = document.getElementById('category-radio-group');
+      container.innerHTML = '';
+      FOOD_CATEGORIES.forEach(cat => {
+        const isSelected = cat.id === modalSelectedCategory;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.onclick = () => {
+          modalSelectedCategory = cat.id;
+          renderCategoryRadios();
+        };
+        btn.className = `p-2 rounded-xl border text-center transition ${isSelected ? 'border-emerald-600 bg-emerald-50 text-emerald-800 font-bold' : 'border-slate-200 bg-slate-50 text-slate-600'}`;
+        btn.innerHTML = `<div class="text-base">${cat.emoji}</div><div class="text-[10px] mt-0.5">${cat.name}</div>`;
+        container.appendChild(btn);
+      });
+    }
+
+    function autoDetectCategory(name) {
+      if (editingItemId !== null) return;
+      const val = name.toLowerCase();
+      if (/肉|牛|豚|鶏|ミンチ|ソーセージ|ハム/.test(val)) modalSelectedCategory = 'MEAT';
+      else if (/キャベツ|トマト|玉ねぎ|ネギ|人参|にんじん|ほうれん草|レタス|きのこ/.test(val)) modalSelectedCategory = 'VEGETABLE';
+      else if (/鮭|魚|マグロ|アジ|サバ|えび|海老|たらこ|切り身|刺身/.test(val)) modalSelectedCategory = 'FISH';
+      else if (/牛乳|チーズ|ヨーグルト|バター|乳/.test(val)) modalSelectedCategory = 'DAIRY';
+      else modalSelectedCategory = 'OTHER';
+      renderCategoryRadios();
+    }
+
+    function saveFridgeItem() {
+      const name = document.getElementById('modal-name').value.trim();
+      if (!name) return alert('品名を入力してください');
+      const qty = parseInt(document.getElementById('modal-qty-val').innerText);
+      const unit = document.getElementById('modal-unit').value.trim() || '個';
+
+      if (editingItemId === null) {
+        fridgeItems.push({
+          id: Date.now(),
+          name: name,
+          category: modalSelectedCategory,
+          quantity: qty,
+          unit: unit,
+          purchaseDate: '2026-09-25',
+          isConsumed: false
+        });
+      } else {
+        const item = fridgeItems.find(i => i.id === editingItemId);
+        if (item) {
+          item.name = name;
+          item.category = modalSelectedCategory;
+          item.quantity = qty;
+          item.unit = unit;
+        }
+      }
+      closeModal('add-item-modal');
+      renderFridgeItems();
+    }
+
+    // Share Sheet
+    function openShareSheet() {
+      const active = fridgeItems.filter(i => !i.isConsumed);
+      if (active.length === 0) {
+        return alert('共有できる在庫がありません');
+      }
+
+      let text = `【冷蔵庫の在庫一覧】(全${active.length}品)\n\n`;
+      FOOD_CATEGORIES.forEach(cat => {
+        const inCat = active.filter(i => i.category === cat.id);
+        if (inCat.length > 0) {
+          text += `【${cat.name}】\n`;
+          inCat.forEach(i => {
+            const pDate = new Date(i.purchaseDate);
+            text += `・${i.name} (${i.quantity}${i.unit}) [${pDate.getMonth()+1}/${pDate.getDate()}購入]\n`;
+          });
+          text += `\n`;
+        }
+      });
+      text += `※ local-budget から送信`;
+
+      document.getElementById('share-text-content').innerText = text.trim();
+      document.getElementById('share-sheet-modal').classList.remove('hidden');
+    }
+
+    function copyShareText() {
+      const text = document.getElementById('share-text-content').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('クリップボードにコピーしました！\nLINEやメッセージにそのまま貼り付けできます。');
+        closeModal('share-sheet-modal');
+      });
+    }
+
+    // Receipt Scan Flow Simulation
+    function triggerReceiptScanDemo() {
+      document.getElementById('scan-modal').classList.remove('hidden');
+    }
+
+    const sampleExtractedFoods = [
+      { name: '国産牛こま切れ', category: 'MEAT', quantity: 1, unit: '個' },
+      { name: 'キャベツ 1玉', category: 'VEGETABLE', quantity: 1, unit: '個' },
+      { name: '牛乳 1L', category: 'DAIRY', quantity: 1, unit: '本' },
+      { name: 'プレーンヨーグルト', category: 'DAIRY', quantity: 1, unit: '個' }
+    ];
+
+    function processReceiptScanDemo() {
+      closeModal('scan-modal');
+      const listEl = document.getElementById('extracted-checklist');
+      listEl.innerHTML = '';
+
+      sampleExtractedFoods.forEach((food, idx) => {
+        const cat = FOOD_CATEGORIES.find(c => c.id === food.category);
+        const row = document.createElement('label');
+        row.className = "flex items-center gap-2 bg-white p-2 rounded-lg border border-emerald-100 cursor-pointer select-none";
+        row.innerHTML = `
+          <input type="checkbox" checked id="ext-check-${idx}" class="w-4 h-4 rounded text-emerald-600 focus:ring-0">
+          <span class="text-sm">${cat.emoji}</span>
+          <span class="font-bold text-slate-800 flex-1">${food.name}</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${cat.bg}">${cat.name}</span>
+        `;
+        listEl.appendChild(row);
+      });
+
+      document.getElementById('ocr-review-modal').classList.remove('hidden');
+    }
+
+    function saveOcrExpenseAndFridgeItems() {
+      let addedCount = 0;
+      sampleExtractedFoods.forEach((food, idx) => {
+        const chk = document.getElementById(`ext-check-${idx}`);
+        if (chk && chk.checked) {
+          fridgeItems.unshift({
+            id: Date.now() + idx,
+            name: food.name,
+            category: food.category,
+            quantity: food.quantity,
+            unit: food.unit,
+            purchaseDate: '2026-09-25',
+            isConsumed: false
+          });
+          addedCount++;
+        }
+      });
+
+      closeModal('ocr-review-modal');
+      switchTab('fridge');
+      alert(`支出 ¥2,010 を記録し、食材 ${addedCount}件 を冷蔵庫の在庫に登録しました！🥦🥩🥛`);
+    }
+
+    // Initial render
+    renderFridgeItems();
+  </script>
+</body>
+</html>
